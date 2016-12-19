@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "d269ab0a14ae6259d1a7d85bfc1391f0",
-    "content-hash": "903abb8601fd233b81a48b5922766db3",
+    "hash": "52a550c104543f7f3bd05bf992f7a1f4",
+    "content-hash": "c7718974827a692e314d1cabcc330b2c",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -659,6 +659,46 @@
             "time": "2016-10-10 12:19:37"
         },
         {
+            "name": "rappasoft/laravel-helpers",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rappasoft/laravel-helpers.git",
+                "reference": "9dfbb3f316db9ec304eeeb94d2cfedd803680a57"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rappasoft/laravel-helpers/zipball/9dfbb3f316db9ec304eeeb94d2cfedd803680a57",
+                "reference": "9dfbb3f316db9ec304eeeb94d2cfedd803680a57",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Anthony Rappa",
+                    "email": "rappa819@gmail.com"
+                }
+            ],
+            "description": "Laravel Helpers for Non-Laravel Projects",
+            "keywords": [
+                "helpers",
+                "laravel"
+            ],
+            "time": "2016-10-19 14:15:19"
+        },
+        {
             "name": "react/promise",
             "version": "v2.4.1",
             "source": {
@@ -706,7 +746,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "rappasoft/laravel-helpers": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
