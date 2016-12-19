@@ -1,0 +1,13 @@
+{
+  "name": "go1/report-helpers",
+  "autoload": {
+    "psr-4": {
+      "go1\\reportHelpers\\": "./"
+    }
+  },
+  "require": {
+    "elasticsearch/elasticsearch": "^2.2",
+    "jsq/amazon-es-php": "^0.1.0",
+    "pimple/pimple": "^v3.0.0"
+  }
+}
