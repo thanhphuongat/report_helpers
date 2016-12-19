@@ -2,6 +2,11 @@
 
 namespace go1\reportHelpers;
 
+use Aws\Credentials\CredentialProvider;
+use Aws\Credentials\Credentials;
+use Aws\ElasticsearchService\ElasticsearchPhpHandler;
+use Aws\S3\S3Client;
+use Elasticsearch\ClientBuilder;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 
@@ -12,5 +17,31 @@ class ReportHelpersServiceProvider implements ServiceProviderInterface
         $c['go1.report_helpers.export'] = function () {
             return new Export();
         };
+        $c['go1.report_helpers.s3'] = function (Container $c) {
+            $options = $c['s3'];
+            return new S3Client([
+                'region'      => $options['region'],
+                'version'     => '2006-03-01',
+                'credentials' => new Credentials($options['key'], $options['access']),
+            ]);
+        };
+        $c['go1.report_helpers.elasticsearch'] = function (Container $c) {
+            $options = $c['elasticsearch'];
+            $clientBuilder = ClientBuilder::create();
+
+            if (isset($options['key']) && isset($options['access']) && isset($options['region'])) {
+                $provider = CredentialProvider::fromCredentials(
+                    new Credentials($options['key'], $options['access'])
+                );
+
+                $handler = new ElasticsearchPhpHandler($options['region'], $provider);
+
+                $clientBuilder->setHandler($handler);
+            }
+
+            $clientBuilder->setHosts([$options['endpoint']]);
+            return $clientBuilder->build();
+        };
+
     }
 }
