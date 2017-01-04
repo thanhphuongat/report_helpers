@@ -30,12 +30,34 @@ class Export
                 ]
             ];
         }
-        $response = $elasticsearchClient->search($params);
 
-        foreach ($response['hits']['hits'] as $hit) {
-            if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
-                $csv = $this->getValues($fields, $hit);
-                fputcsv($stream, $csv);
+        $params += [
+            'search_type' => 'scan',
+            'scroll' => '30s',
+            'size' => 50,
+        ];
+
+        $docs = $elasticsearchClient->search($params);
+        $scrollId = $docs['_scroll_id'];
+
+        while (\true) {
+            $response = $elasticsearchClient->scroll([
+                    'scroll_id' => $scrollId,
+                    'scroll' => '30s',
+                ]
+            );
+
+            if (count($response['hits']['hits']) > 0) {
+                foreach ($response['hits']['hits'] as $hit) {
+                    if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
+                        $csv = $this->getValues($fields, $hit);
+                        fputcsv($stream, $csv);
+                    }
+                }
+
+                $scrollId = $response['_scroll_id'];
+            } else {
+                break;
             }
         }
 
