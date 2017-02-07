@@ -7,7 +7,7 @@ use Elasticsearch\Client as ElasticsearchClient;
 
 class Export
 {
-    public function toCsv(S3Client $s3Client, ElasticsearchClient $elasticsearchClient, $bucket, $key, $fields, $params, $selectedIds, $excludedIds)
+    public function toCsv(S3Client $s3Client, ElasticsearchClient $elasticsearchClient, $region, $bucket, $key, $fields, $params, $selectedIds, $excludedIds)
     {
         $this->hideFields($fields);
         $this->sortFields($fields);
@@ -63,7 +63,7 @@ class Export
 
         fclose($stream);
 
-        return "https://{$bucket}.s3.amazonaws.com/{$key}";
+        return "https://s3-{$region}.amazonaws.com/$bucket/{$key}";
     }
 
     protected function hideFields(&$fields)
