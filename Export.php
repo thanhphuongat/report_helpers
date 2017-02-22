@@ -18,69 +18,51 @@ class Export
                 'ACL' => 'public-read'
             )
         ));
-        // Opening a file in w mode truncates the file automatically, so we need
-        // to use a mode.
-        $stream = fopen("s3://{$bucket}/{$key}", 'a', 0, $context);
+        // Opening a file in 'w' mode truncates the file automatically.
+        $stream = fopen("s3://{$bucket}/{$key}", 'w', 0, $context);
 
-        // Acquire an exclusive lock.
-        if (flock($stream, LOCK_EX)) {
-            // Truncate file.
-            ftruncate($fp, 0);
+        // Write header.
+        fputcsv($stream, $this->getHeaders($fields));
 
-            // Write header.
-            fputcsv($stream, $this->getHeaders($fields));
-
-            if ($selectedIds !== ['All']) {
-                // Improve performance by not loading all records then filter out.
-                $params['body']['query']['filtered']['filter']['and'][] = [
-                    'terms' => [
-                        'id' => $selectedIds
-                    ]
-                ];
-            }
-
-            $params += [
-                'search_type' => 'scan',
-                'scroll' => '30s',
-                'size' => 50,
+        if ($selectedIds !== ['All']) {
+            // Improve performance by not loading all records then filter out.
+            $params['body']['query']['filtered']['filter']['and'][] = [
+                'terms' => [
+                    'id' => $selectedIds
+                ]
             ];
+        }
 
-            $docs = $elasticsearchClient->search($params);
-            $scrollId = $docs['_scroll_id'];
+        $params += [
+            'search_type' => 'scan',
+            'scroll' => '30s',
+            'size' => 50,
+        ];
 
-            while (\true) {
-                $response = $elasticsearchClient->scroll([
-                        'scroll_id' => $scrollId,
-                        'scroll' => '30s',
-                    ]
-                );
+        $docs = $elasticsearchClient->search($params);
+        $scrollId = $docs['_scroll_id'];
 
-                if (count($response['hits']['hits']) > 0) {
-                    foreach ($response['hits']['hits'] as $hit) {
-                        if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
-                            $csv = $this->getValues($fields, $hit);
-                            // Write row.
-                            fputcsv($stream, $csv);
-                        }
+        while (\true) {
+            $response = $elasticsearchClient->scroll([
+                    'scroll_id' => $scrollId,
+                    'scroll' => '30s',
+                ]
+            );
+
+            if (count($response['hits']['hits']) > 0) {
+                foreach ($response['hits']['hits'] as $hit) {
+                    if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
+                        $csv = $this->getValues($fields, $hit);
+                        // Write row.
+                        fputcsv($stream, $csv);
                     }
-
-                    $scrollId = $response['_scroll_id'];
-                } else {
-                    break;
                 }
+
+                $scrollId = $response['_scroll_id'];
+            } else {
+                break;
             }
-
-            // Flush output before releasing the lock, Not sure it is needed.
-            fflush($stream);
-
-            // Release the lock.
-            flock($stream, LOCK_UN);
         }
-        else {
-            // We are uploading the file.
-        }
-
-        fclose($stream);
     }
 
     public function getFile($region, $bucket, $key)
