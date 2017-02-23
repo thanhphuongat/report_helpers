@@ -7,7 +7,7 @@ use Elasticsearch\Client as ElasticsearchClient;
 
 class Export
 {
-    public function uploadCsv(S3Client $s3Client, ElasticsearchClient $elasticsearchClient, $region, $bucket, $key, $fields, $params, $selectedIds, $excludedIds)
+    public function uploadCsv(S3Client $s3Client, ElasticsearchClient $elasticsearchClient, $region, $bucket, $key, $fields, $params, $selectedIds, $excludedIds, $flushEvery = 1000)
     {
         $this->hideFields($fields);
         $this->sortFields($fields);
@@ -62,7 +62,7 @@ class Export
                 $scrollId = $response['_scroll_id'];
                 $total += count($response['hits']['hits']);
 
-                if ($total % 1000 === 0) {
+                if ($total % $flushEvery === 0) {
                     // Flush the output.
                     fflush($stream);
                 }
