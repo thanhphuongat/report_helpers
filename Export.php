@@ -41,6 +41,7 @@ class Export
 
         $docs = $elasticsearchClient->search($params);
         $scrollId = $docs['_scroll_id'];
+        $total = 0;
 
         while (\true) {
             $response = $elasticsearchClient->scroll([
@@ -59,10 +60,18 @@ class Export
                 }
 
                 $scrollId = $response['_scroll_id'];
+                $total += count($response['hits']['hits']);
+
+                if ($total % 1000 === 0) {
+                    // Flush the output.
+                    fflush($stream);
+                }
             } else {
                 break;
             }
         }
+
+        fclose($stream);
     }
 
     public function getFile($region, $bucket, $key)
