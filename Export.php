@@ -60,7 +60,7 @@ class Export
 
         $params += [
             'search_type' => 'scan',
-            'scroll' => '30s',
+            'scroll' => '1s',
             'size' => 30,
         ];
 
@@ -70,7 +70,7 @@ class Export
         while (\true) {
             $response = $this->elasticsearchClient->scroll([
                     'scroll_id' => $scrollId,
-                    'scroll' => '30s',
+                    'scroll' => '1s',
                 ]
             );
 
