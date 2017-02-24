@@ -36,7 +36,7 @@ class Export
         $params += [
             'search_type' => 'scan',
             'scroll' => '1s',
-            'size' => 200,
+            'size' => 50,
         ];
 
         $docs = $elasticsearchClient->search($params);
