@@ -61,7 +61,7 @@ class Export
         $params += [
             'search_type' => 'scan',
             'scroll' => '1s',
-            'size' => 30,
+            'size' => 50,
         ];
 
         $docs = $this->elasticsearchClient->search($params);
@@ -84,6 +84,7 @@ class Export
                 }
 
                 $scrollId = $response['_scroll_id'];
+                usleep(100000);
             } else {
                 break;
             }
