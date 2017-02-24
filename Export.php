@@ -4,15 +4,40 @@ namespace go1\reportHelpers;
 
 use Aws\S3\S3Client;
 use Elasticsearch\Client as ElasticsearchClient;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessBuilder;
 
 class Export
 {
-    public function uploadCsv(S3Client $s3Client, ElasticsearchClient $elasticsearchClient, $bucket, $key, $fields, $params, $selectedIds, $excludedIds)
+    /** @var S3Client */
+    protected $s3Client;
+    /** @var ElasticsearchClient */
+    protected $elasticsearchClient;
+
+    public function __construct(S3Client $s3Client, ElasticsearchClient $elasticsearchClient)
+    {
+        $this->s3Client = $s3Client;
+        $this->elasticsearchClient = $elasticsearchClient;
+    }
+
+    public function uploadCsv($app, $bucket, $key, $fields, $params, $selectedIds, $excludedIds)
+    {
+        $builder = new ProcessBuilder();
+        $builder->setPrefix('/usr/bin/php');
+        $command = $builder->setArguments(array(__DIR__ .'/background-export.php', $app, $bucket, $key, json_encode($fields), json_encode($params), json_encode($selectedIds), json_encode($excludedIds)))
+              ->getProcess()
+              ->getCommandLine();
+
+        $process = new Process($command);
+        $process->start();
+    }
+
+    public function doExport($bucket, $key, $fields, $params, $selectedIds, $excludedIds)
     {
         $this->hideFields($fields);
         $this->sortFields($fields);
 
-        $s3Client->registerStreamWrapper();
+        $this->s3Client->registerStreamWrapper();
         $context = stream_context_create(array(
             's3' => array(
                 'ACL' => 'public-read'
@@ -39,11 +64,11 @@ class Export
             'size' => 30,
         ];
 
-        $docs = $elasticsearchClient->search($params);
+        $docs = $this->elasticsearchClient->search($params);
         $scrollId = $docs['_scroll_id'];
 
         while (\true) {
-            $response = $elasticsearchClient->scroll([
+            $response = $this->elasticsearchClient->scroll([
                     'scroll_id' => $scrollId,
                     'scroll' => '30s',
                 ]

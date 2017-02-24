@@ -14,8 +14,8 @@ class ReportHelpersServiceProvider implements ServiceProviderInterface
 {
     public function register(Container $c)
     {
-        $c['go1.report_helpers.export'] = function () {
-            return new Export();
+        $c['go1.report_helpers.export'] = function (Container $c) {
+            return new Export($c['go1.report_helpers.s3'], $c['go1.report_helpers.elasticsearch']);
         };
         $c['go1.report_helpers.s3'] = function (Container $c) {
             $options = $c['s3'];

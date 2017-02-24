@@ -9,6 +9,7 @@
     "elasticsearch/elasticsearch": "^2.2",
     "jsq/amazon-es-php": "^0.1.0",
     "pimple/pimple": "^v3.0.0",
-    "rappasoft/laravel-helpers": "dev-master"
+    "rappasoft/laravel-helpers": "dev-master",
+    "symfony/process": "^3.2"
   }
 }
