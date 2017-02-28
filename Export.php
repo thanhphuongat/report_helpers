@@ -68,24 +68,31 @@ class Export
         $scrollId = $docs['_scroll_id'];
 
         while (\true) {
-            $response = $this->elasticsearchClient->scroll([
+            $docs = $this->elasticsearchClient->scroll([
                     'scroll_id' => $scrollId,
                     'scroll' => '1s',
                 ]
             );
 
-            if (count($response['hits']['hits']) > 0) {
-                foreach ($response['hits']['hits'] as $hit) {
+            if (isset($docs['_scroll_id'])) {
+                $scrollId = $docs['_scroll_id'];
+            }
+
+            if (count($docs['hits']['hits']) > 0) {
+                foreach ($docs['hits']['hits'] as $hit) {
                     if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
                         $csv = $this->getValues($fields, $hit);
                         // Write row.
                         fputcsv($stream, $csv);
                     }
                 }
-
-                $scrollId = $response['_scroll_id'];
-                usleep(100000);
-            } else {
+            }
+            elseif (isset($docs['_scroll_id'])) {
+                $this->elasticsearchClient->clearScroll([
+                        'scroll_id' => $scrollId,
+                        'scroll' => '1s',
+                    ]
+                );
                 break;
             }
         }
