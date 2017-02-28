@@ -4,8 +4,6 @@ namespace go1\reportHelpers;
 
 use Aws\S3\S3Client;
 use Elasticsearch\Client as ElasticsearchClient;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\ProcessBuilder;
 
 class Export
 {
@@ -18,18 +16,6 @@ class Export
     {
         $this->s3Client = $s3Client;
         $this->elasticsearchClient = $elasticsearchClient;
-    }
-
-    public function uploadCsv($app, $bucket, $key, $fields, $params, $selectedIds, $excludedIds)
-    {
-        $builder = new ProcessBuilder();
-        $builder->setPrefix('/usr/bin/php');
-        $command = $builder->setArguments(array(__DIR__ .'/background-export.php', $app, $bucket, $key, json_encode($fields), json_encode($params), json_encode($selectedIds), json_encode($excludedIds)))
-              ->getProcess()
-              ->getCommandLine();
-
-        $process = new Process($command);
-        $process->start();
     }
 
     public function doExport($bucket, $key, $fields, $params, $selectedIds, $excludedIds)
@@ -70,7 +56,7 @@ class Export
         while (\true) {
             $docs = $this->elasticsearchClient->scroll([
                     'scroll_id' => $scrollId,
-                    'scroll' => '1s',
+                    'scroll' => '30s',
                 ]
             );
 
@@ -87,12 +73,14 @@ class Export
                     }
                 }
             }
-            elseif (isset($docs['_scroll_id'])) {
-                $this->elasticsearchClient->clearScroll([
-                        'scroll_id' => $scrollId,
-                        'scroll' => '1s',
-                    ]
-                );
+            else {
+                if (isset($docs['_scroll_id'])) {
+                    $this->elasticsearchClient->clearScroll([
+                            'scroll_id' => $scrollId,
+                            'scroll' => '1s',
+                        ]
+                    );
+                }
                 break;
             }
         }
