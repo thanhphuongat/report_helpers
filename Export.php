@@ -4,6 +4,7 @@ namespace go1\reportHelpers;
 
 use Aws\S3\S3Client;
 use Elasticsearch\Client as ElasticsearchClient;
+use Elasticsearch\Common\Exceptions\Missing404Exception;
 
 class Export
 {
@@ -55,10 +56,9 @@ class Export
 
         while (\true) {
             $docs = $this->elasticsearchClient->scroll([
-                    'scroll_id' => $scrollId,
-                    'scroll' => '1s',
-                ]
-            );
+                'scroll_id' => $scrollId,
+                'scroll' => '1s',
+            ]);
 
             if (isset($docs['_scroll_id'])) {
                 $scrollId = $docs['_scroll_id'];
@@ -75,11 +75,14 @@ class Export
             }
             else {
                 if (isset($docs['_scroll_id'])) {
-                    $this->elasticsearchClient->clearScroll([
-                            'scroll_id' => $scrollId,
-                            'scroll' => '1s',
-                        ]
-                    );
+                    try {
+                        $this->elasticsearchClient->clearScroll([
+                                'scroll_id' => $scrollId,
+                                'scroll' => '1s',
+                        ]);
+                    }
+                    catch (Missing404Exception $e) {
+                    }
                 }
                 break;
             }
