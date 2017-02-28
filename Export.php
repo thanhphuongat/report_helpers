@@ -56,7 +56,7 @@ class Export
         while (\true) {
             $docs = $this->elasticsearchClient->scroll([
                     'scroll_id' => $scrollId,
-                    'scroll' => '30s',
+                    'scroll' => '1s',
                 ]
             );
 
