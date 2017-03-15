@@ -1,15 +1,15 @@
 <?php
 
-namespace go1\reportHelpers\tests;
+namespace go1\report_helpers\tests;
 
 use Aws\S3\S3Client;
 use Elasticsearch\Client as ElasticsearchClient;
-use go1\reportHelpers\Export;
-use go1\reportHelpers\ReportHelpersServiceProvider;
-use PHPUnit_Framework_TestCase;
+use go1\report_helpers\Export;
+use go1\report_helpers\ReportHelpersServiceProvider;
+use PHPUnit\Framework\TestCase;
 use Pimple\Container;
 
-class ReportHelpersTest extends PHPUnit_Framework_TestCase
+class ReportHelpersTest extends TestCase
 {
     public function testContainerValidation()
     {

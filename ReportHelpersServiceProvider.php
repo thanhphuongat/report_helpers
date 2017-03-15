@@ -1,6 +1,6 @@
 <?php
 
-namespace go1\reportHelpers;
+namespace go1\report_helpers;
 
 use Aws\Credentials\CredentialProvider;
 use Aws\Credentials\Credentials;

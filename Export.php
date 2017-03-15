@@ -1,6 +1,6 @@
 <?php
 
-namespace go1\reportHelpers;
+namespace go1\report_helpers;
 
 use Aws\S3\S3Client;
 use Elasticsearch\Client as ElasticsearchClient;
