@@ -6,8 +6,8 @@
     }
   },
   "require": {
-    "elasticsearch/elasticsearch": "^2.3",
-    "jsq/amazon-es-php": "^0.1.0",
+    "elasticsearch/elasticsearch": "^5.0",
+    "jsq/amazon-es-php": "^0.2.0",
     "pimple/pimple": "^v3.0.0",
     "rappasoft/laravel-helpers": "dev-master"
   }
