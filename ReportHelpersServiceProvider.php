@@ -14,33 +14,28 @@ class ReportHelpersServiceProvider implements ServiceProviderInterface
 {
     public function register(Container $c)
     {
-        $c['go1.report_helpers.export'] = function (Container $c) {
-            return new Export($c['go1.report_helpers.s3'], $c['go1.report_helpers.elasticsearch']);
+        $c['report_export'] = function (Container $c) {
+            return new Export($c['go1.client.s3'], $c['go1.client.es']);
         };
-        $c['go1.report_helpers.s3'] = function (Container $c) {
-            $options = $c['s3'];
+        $c['go1.client.s3'] = function (Container $c) {
+            $o = $c['s3Options'];
             return new S3Client([
-                'region'      => $options['region'],
+                'region'      => $o['region'],
                 'version'     => '2006-03-01',
-                'credentials' => new Credentials($options['key'], $options['access']),
+                'credentials' => new Credentials($o['key'], $o['secret']),
             ]);
         };
-        $c['go1.report_helpers.elasticsearch'] = function (Container $c) {
-            $options = $c['elasticsearch'];
-            $clientBuilder = ClientBuilder::create();
+        $c['go1.client.es'] = function (Container $c) {
+            $client = ClientBuilder::create();
 
-            if (isset($options['key']) && isset($options['access']) && isset($options['region'])) {
-                $provider = CredentialProvider::fromCredentials(
-                    new Credentials($options['key'], $options['access'])
-                );
-
-                $handler = new ElasticsearchPhpHandler($options['region'], $provider);
-
-                $clientBuilder->setHandler($handler);
+            if (($o = $c['esOptions']) && $o['credential']) {
+                $provider = CredentialProvider::fromCredentials(new Credentials($o['key'], $o['secret']));
+                $client->setHandler(new ElasticsearchPhpHandler($o['region'], $provider));
             }
 
-            $clientBuilder->setHosts([$options['endpoint']]);
-            return $clientBuilder->build();
+            return $client
+                ->setHosts([parse_url($o['endpoint'])])
+                ->build();
         };
 
     }

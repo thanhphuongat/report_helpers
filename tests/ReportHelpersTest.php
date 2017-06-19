@@ -15,21 +15,22 @@ class ReportHelpersTest extends TestCase
     {
         $c = new Container;
         $c->register(new ReportHelpersServiceProvider, [
-            's3'             => [
+            's3Options'  => [
                 'region'   => 'abc',
                 'key'      => '123',
-                'access'   => 'a1!',
+                'secret'   => 'a1!',
             ],
-            'elasticsearch'  => [
-                'region'   => 'abc',
-                'key'      => '123',
-                'access'   => 'a1!',
-                'endpoint' => 'test.aws.local'
+            'esOptions'  => [
+                'credential' => true,
+                'region'     => 'abc',
+                'key'        => '123',
+                'secret'     => 'a1!',
+                'endpoint'   => 'http://test.aws.local'
             ],
         ]);
 
-        $this->assertTrue($c['go1.report_helpers.export'] instanceof Export);
-        $this->assertTrue($c['go1.report_helpers.s3'] instanceof S3Client);
-        $this->assertTrue($c['go1.report_helpers.elasticsearch'] instanceof ElasticsearchClient);
+        $this->assertTrue($c['report_export'] instanceof Export);
+        $this->assertTrue($c['go1.client.s3'] instanceof S3Client);
+        $this->assertTrue($c['go1.client.es'] instanceof ElasticsearchClient);
     }
 }
