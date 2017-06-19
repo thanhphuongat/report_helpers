@@ -4,7 +4,6 @@ namespace go1\report_helpers;
 
 use Aws\S3\S3Client;
 use Elasticsearch\Client as ElasticsearchClient;
-use Elasticsearch\Common\Exceptions\Missing404Exception;
 
 class Export
 {
@@ -19,11 +18,8 @@ class Export
         $this->elasticsearchClient = $elasticsearchClient;
     }
 
-    public function doExport($bucket, $key, $fields, $params, $selectedIds, $excludedIds)
+    public function doExport($region, $bucket, $key, $fields, $headers, $params, $selectedIds, $excludedIds, $scrollId = null)
     {
-        $this->hideFields($fields);
-        $this->sortFields($fields);
-
         $this->s3Client->registerStreamWrapper();
         $context = stream_context_create(array(
             's3' => array(
@@ -32,9 +28,6 @@ class Export
         ));
         // Opening a file in 'w' mode truncates the file automatically.
         $stream = fopen("s3://{$bucket}/{$key}", 'w', 0, $context);
-
-        // Write header.
-        fputcsv($stream, $this->getHeaders($fields));
 
         if ($selectedIds !== ['All']) {
             // Improve performance by not loading all records then filter out.
@@ -47,81 +40,43 @@ class Export
 
         $params += [
             'search_type' => 'scan',
-            'scroll' => '1s',
+            'scroll' => '30s',
             'size' => 50,
         ];
 
-        $docs = $this->elasticsearchClient->search($params);
-        $scrollId = $docs['_scroll_id'];
+        if (!$scrollId) {
+            // Write header.
+            fputcsv($stream, $headers);
 
-        while (\true) {
+            $docs = $this->elasticsearchClient->search($params);
+        }
+        else {
             $docs = $this->elasticsearchClient->scroll([
                 'scroll_id' => $scrollId,
-                'scroll' => '1s',
+                'scroll' => '30s',
             ]);
+        }
 
-            if (isset($docs['_scroll_id'])) {
-                $scrollId = $docs['_scroll_id'];
-            }
-
-            if (count($docs['hits']['hits']) > 0) {
-                foreach ($docs['hits']['hits'] as $hit) {
-                    if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
-                        $csv = $this->getValues($fields, $hit);
-                        // Write row.
-                        fputcsv($stream, $csv);
-                    }
+        if (isset($docs['hits']['hits']) && count($docs['hits']['hits']) > 0) {
+            foreach ($docs['hits']['hits'] as $hit) {
+                if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
+                    $csv = $this->getValues($fields, $hit);
+                    // Write row.
+                    fputcsv($stream, $csv);
                 }
             }
-            else {
-                if (isset($docs['_scroll_id'])) {
-                    try {
-                        $this->elasticsearchClient->clearScroll([
-                                'scroll_id' => $scrollId,
-                                'scroll' => '1s',
-                        ]);
-                    }
-                    catch (Missing404Exception $e) {
-                    }
-                }
-                break;
-            }
+
+            fclose($stream);
+
+            return [
+                'scrollId' => $docs['_scroll_id']
+            ];
         }
-
-        fclose($stream);
-    }
-
-    public function getFile($region, $bucket, $key)
-    {
-        return "https://s3-{$region}.amazonaws.com/$bucket/{$key}";
-    }
-
-    protected function hideFields(&$fields)
-    {
-        foreach ($fields as $key => $field) {
-            if (!$field['options']['datatable']['visible']) {
-                unset($fields[$key]);
-            }
+        else {
+            return [
+                'file' => "https://s3-{$region}.amazonaws.com/{$bucket}/{$key}"
+            ];
         }
-    }
-
-    protected function sortFields(&$fields)
-    {
-        uasort($fields, function ($a, $b) {
-            if ($a['options']['datatable']['order'] == $b['options']['datatable']['order']) {
-                return 0;
-            }
-            return ($a['options']['datatable']['order'] < $b['options']['datatable']['order']) ? -1 : 1;
-        });
-    }
-
-    protected function getHeaders($fields)
-    {
-        $header = [];
-        foreach ($fields as $field) {
-            $header[] = $field['title'];
-        }
-        return $header;
     }
 
     protected function getValues($fields, $hit)
