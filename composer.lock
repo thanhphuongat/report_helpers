@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "8dc9e06a06a29eba33b3498c4be18f5e",
+    "content-hash": "84db1d4c481dc3e1545f9da492515f23",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -421,21 +421,21 @@
         },
         {
             "name": "jsq/amazon-es-php",
-            "version": "0.1.0",
+            "version": "0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jeskew/amazon-es-php.git",
-                "reference": "f1609a48c106dc0baf6b629957f76fcf7da1a424"
+                "reference": "4b99f2a6eca9ef6952120a55c6e29d9130b79909"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jeskew/amazon-es-php/zipball/f1609a48c106dc0baf6b629957f76fcf7da1a424",
-                "reference": "f1609a48c106dc0baf6b629957f76fcf7da1a424",
+                "url": "https://api.github.com/repos/jeskew/amazon-es-php/zipball/4b99f2a6eca9ef6952120a55c6e29d9130b79909",
+                "reference": "4b99f2a6eca9ef6952120a55c6e29d9130b79909",
                 "shasum": ""
             },
             "require": {
                 "aws/aws-sdk-php": "^3.0",
-                "elasticsearch/elasticsearch": "^2.1"
+                "elasticsearch/elasticsearch": "^2.1|^5.0"
             },
             "require-dev": {
                 "phpunit/phpunit": "~4.0|~5.0"
@@ -464,7 +464,7 @@
                 "iam",
                 "search"
             ],
-            "time": "2016-04-11T22:06:59+00:00"
+            "time": "2017-02-11T18:19:09+00:00"
         },
         {
             "name": "mtdowling/jmespath.php",
