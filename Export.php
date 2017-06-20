@@ -20,14 +20,10 @@ class Export
 
     public function doExport($region, $bucket, $key, $fields, $headers, $params, $selectedIds, $excludedIds, $scrollId = null)
     {
-        $this->s3Client->registerStreamWrapper();
-        $context = stream_context_create(array(
-            's3' => array(
-                'ACL' => 'public-read'
-            )
-        ));
-        // Opening a file in 'w' mode truncates the file automatically.
-        $stream = fopen("s3://{$bucket}/{$key}", 'w', 0, $context);
+        if (!is_dir(dirname("/tmp/{$key}"))) {
+            mkdir(dirname("/tmp/{$key}"), 0777, true);
+        }
+        $temp = fopen("/tmp/{$key}", 'a+');
 
         if ($selectedIds !== ['All']) {
             // Improve performance by not loading all records then filter out.
@@ -41,14 +37,20 @@ class Export
         $params += [
             'search_type' => 'scan',
             'scroll' => '30s',
-            'size' => 50,
+            'size' => 1000,
         ];
 
         if (!$scrollId) {
             // Write header.
-            fputcsv($stream, $headers);
+            fputcsv($temp, $headers);
+            fclose($temp);
 
             $docs = $this->elasticsearchClient->search($params);
+
+            return [
+                'scrollId' => $docs['_scroll_id'],
+                'key' => $key,
+            ];
         }
         else {
             $docs = $this->elasticsearchClient->scroll([
@@ -62,17 +64,26 @@ class Export
                 if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
                     $csv = $this->getValues($fields, $hit);
                     // Write row.
-                    fputcsv($stream, $csv);
+                    fputcsv($temp, $csv);
                 }
             }
-
-            fclose($stream);
+            fclose($temp);
 
             return [
-                'scrollId' => $docs['_scroll_id']
+                'scrollId' => $docs['_scroll_id'],
+                'key' => $key,
             ];
         }
         else {
+            rewind($temp);
+            $this->s3Client->registerStreamWrapper();
+            $context = stream_context_create(array(
+                's3' => array(
+                    'ACL' => 'public-read'
+                )
+            ));
+            file_put_contents("s3://{$bucket}/{$key}", $temp, 0, $context);
+            unlink("/tmp/{$key}");
             return [
                 'file' => "https://s3-{$region}.amazonaws.com/{$bucket}/{$key}"
             ];
@@ -82,8 +93,8 @@ class Export
     protected function getValues($fields, $hit)
     {
         $values = [];
-        foreach ($fields as $key => $field) {
-            $value = array_get($hit['_source'], $key);
+        foreach ($fields as $field) {
+            $value = array_get($hit['_source'], $field);
             if (is_array($value)) {
                 $value = implode(' ', $value);
             }
