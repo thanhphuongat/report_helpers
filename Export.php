@@ -20,10 +20,15 @@ class Export
 
     public function doExport($region, $bucket, $key, $fields, $headers, $params, $selectedIds, $excludedIds, $scrollId = null)
     {
-        if (!is_dir(dirname("/tmp/{$key}"))) {
-            mkdir(dirname("/tmp/{$key}"), 0777, true);
-        }
-        $temp = fopen("/tmp/{$key}", 'a+');
+        $this->s3Client->registerStreamWrapper();
+        $context = stream_context_create(array(
+            's3' => array(
+                'ACL' => 'public-read'
+            )
+        ));
+        // Opening a file in 'a' mode open or create file for writing at end-of-file.
+        $stream = fopen("s3://{$bucket}/{$key}", 'a', 0, $context);
+
 
         if ($selectedIds !== ['All']) {
             // Improve performance by not loading all records then filter out.
@@ -42,8 +47,8 @@ class Export
 
         if (!$scrollId) {
             // Write header.
-            fputcsv($temp, $headers);
-            fclose($temp);
+            fputcsv($stream, $headers);
+            fclose($stream);
 
             $docs = $this->elasticsearchClient->search($params);
 
@@ -64,10 +69,10 @@ class Export
                 if (empty($excludedIds) || in_array($excludedIds, $hit['id'])) {
                     $csv = $this->getValues($fields, $hit);
                     // Write row.
-                    fputcsv($temp, $csv);
+                    fputcsv($stream, $csv);
                 }
             }
-            fclose($temp);
+            fclose($stream);
 
             return [
                 'scrollId' => $docs['_scroll_id'],
@@ -75,15 +80,6 @@ class Export
             ];
         }
         else {
-            rewind($temp);
-            $this->s3Client->registerStreamWrapper();
-            $context = stream_context_create(array(
-                's3' => array(
-                    'ACL' => 'public-read'
-                )
-            ));
-            file_put_contents("s3://{$bucket}/{$key}", $temp, 0, $context);
-            unlink("/tmp/{$key}");
             return [
                 'file' => "https://s3-{$region}.amazonaws.com/{$bucket}/{$key}"
             ];
