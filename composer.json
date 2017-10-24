@@ -1,14 +1,16 @@
 {
   "name": "go1/report-helpers",
+  "license": "proprietary",
+  "prefer-stable": true,
+  "minimum-stability": "dev",
   "autoload": {
     "psr-4": {
       "go1\\report_helpers\\": "./"
     }
   },
   "require": {
-    "elasticsearch/elasticsearch": "^2.3",
-    "jsq/amazon-es-php": "^0.2.0",
-    "pimple/pimple": "^v3.0.0",
-    "rappasoft/laravel-helpers": "dev-master"
+    "elasticsearch/elasticsearch": "^5.0",
+    "rappasoft/laravel-helpers": "dev-master",
+    "go1/util": "dev-master"
   }
 }
