@@ -277,6 +277,27 @@ namespace go1\report_helpers\tests\export {
             $values = $method->invoke($this->helper, $fields, $hit, $formatters);
             $this->assertEquals(['123 rendered', 123, 'abc123'], $values);
         }
+
+        public function testGetValuesWithDocId()
+        {
+            $this->helper = new Export($this->s3Client, $this->elasticsearchClient);
+
+            $fields = ['_id', 'field_key_1', 'field_key_2', 'field_key_3'];
+            $hit = [
+                '_id' => 'doc:1',
+                '_source' => ['field_key_1' => '123', 'field_key_2' => 'abc', 'field_key_3' => 'abc123', 'abc' => ['123' => 123]]
+            ];
+            $formatters = [
+                'field_key_1' => function ($hit) {
+                    return $hit['_source']['field_key_1'] . ' rendered';
+                },
+                'field_key_2' => 'abc.123'
+            ];
+            $method = (new ReflectionObject($this->helper))->getMethod('getValues');
+            $method->setAccessible(true);
+            $values = $method->invoke($this->helper, $fields, $hit, $formatters);
+            $this->assertEquals(['doc:1', '123 rendered', 123, 'abc123'], $values);
+        }
     }
 
 }

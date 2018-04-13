@@ -95,6 +95,9 @@ class Export
     protected function getValues($fields, $hit, $formatters = [])
     {
         $values = [];
+        if (in_array('_id', $fields) && !isset($hit['_source']['_id'])) {
+            $hit['_source']['_id'] = $hit['_id'];
+        }
         foreach ($fields as $key) {
             if (isset($formatters[$key]) && is_callable($formatters[$key])) {
                 $values[] = $formatters[$key]($hit);
